@@ -1,0 +1,76 @@
+# ========================
+# Maven / Java
+# ========================
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven wrapper
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ========================
+# IDE
+# ========================
+.idea/
+*.iml
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Logs
+# ========================
+logs/
+*.log
+*.gz
+
+# ========================
+# Spring Boot（重点）
+# ========================
+application-dev.yml
+application-local.yml
+
+# ========================
+# Environment
+# ========================
+.env
+.env.local
+
+# ========================
+# Temp files
+# ========================
+tmp/
+temp/
+*.tmp
+
+# ========================
+# Node（如果有前端）
+# ========================
+node_modules/
+dist/
+npm-debug.log*
+yarn-error.log*
+
+# ========================
+# Database
+# ========================
+*.db
+*.sqlite
+
+# ========================
+# Upload / Download
+# ========================
+uploads/
+downloads/
