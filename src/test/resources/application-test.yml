@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: yu-ai-agent-test
+  profiles:
+    active: test
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pgvector_test
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 1
+      minimum-idle: 0
+      connection-timeout: 5000
+  
+  ai:
+    dashscope:
+      api-key: test-key-for-unittest
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      chat:
+        model: qwen-plus
+        enabled: true
+      embedding:
+        model: text-embedding-v3
+        enabled: true
+  
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: WARN
+    com.example.aiagent: INFO
+    org.springframework: WARN
+    org.springframework.ai: INFO

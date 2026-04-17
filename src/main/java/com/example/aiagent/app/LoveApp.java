@@ -3,6 +3,7 @@ package com.example.aiagent.app;
 
 import com.example.aiagent.advisor.MyLoggerAdvisor;
 import com.example.aiagent.rag.QueryRewriter;
+import com.example.aiagent.rag.RagService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -14,6 +15,7 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -131,6 +134,8 @@ public class LoveApp {
 
     @Resource
     private QueryRewriter queryRewriter;
+    @Resource
+    private RagService ragService;
 
     /**
      * 和 RAG 知识库进行对话
@@ -140,34 +145,31 @@ public class LoveApp {
      * @return
      */
     public String doChatWithRag(String message, String chatId) {
-        // 查询重写
+
+        // =========================
+        // 1️⃣ 查询改写
+        // =========================
         String rewrittenMessage = queryRewriter.doQueryRewrite(message);
+
+        // =========================
+        // 2️⃣ RAG（变成一行）
+        // =========================
+        String finalPrompt = ragService.buildContextPrompt(rewrittenMessage);
+
+        // =========================
+        // 3️⃣ LLM 调用
+        // =========================
         ChatResponse chatResponse = chatClient
                 .prompt()
-                // 使用改写后的查询
-                .user(rewrittenMessage)
-                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
-                // 开启日志，便于观察效果
-                .advisors(new MyLoggerAdvisor())
-                // 应用 RAG 知识库问答
-                .advisors(new QuestionAnswerAdvisor(pgVectorVectorStore))
-                // 应用 RAG 检索增强服务（基于云知识库服务）
-//                .advisors(loveAppRagCloudAdvisor)
-                // 应用 RAG 检索增强服务（基于 PgVector 向量存储）
-//               .advisors(new QuestionAnswerAdvisor(pgVectorVectorStore))
-                // 应用自定义的 RAG 检索增强服务（文档查询器 + 上下文增强器）
-//                .advisors(
-//                        LoveAppRagCustomAdvisorFactory.createLoveAppRagCustomAdvisor(
-//                                loveAppVectorStore, "单身"
-//                        )
-//                )
+                .user(finalPrompt)
+                .advisors(
+                        new MyLoggerAdvisor()
+                )
                 .call()
                 .chatResponse();
-        String content = chatResponse.getResult().getOutput().getText();
-        log.info("content: {}", content);
-        return content;
-    }
 
+        return chatResponse.getResult().getOutput().getText();
+    }
     @Resource
     private ToolCallback[] allTools;
 
