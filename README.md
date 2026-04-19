@@ -92,7 +92,7 @@ ai-agent/
 基于 Spring AI 实现结构化响应，将 AI 输出转换为 Java 对象，方便后续处理与展示。
 
 ### 向量检索（RAG）
-自定义 VectorStore，结合 EmbeddingModel 将文本转化为向量并存储至 PGvector，实现语义检索与多条件过滤。
+基于 PGVector 构建高效语义检索系统，集成 EmbeddingModel 实现文本向量化与相似度搜索。采用 Markdown 语义切片与 Token 多级分段，结合 LLM 批量关键词增强与哈希去重，提升中文语义完整性与检索相关性。通过向量表哈希检测实现幂等入库，支持分批 embedding 与增强限流，有效降低大模型调用成本，提升系统稳定性与启动效率。
 
 ### 工具调用体系
 基于 Spring AI Tool Calling 机制，支持文件操作、网络搜索、网页抓取、命令执行、PDF 生成等能力扩展。
