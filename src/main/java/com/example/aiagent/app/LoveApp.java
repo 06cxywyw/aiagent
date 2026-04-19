@@ -2,29 +2,28 @@ package com.example.aiagent.app;
 
 
 import com.example.aiagent.advisor.MyLoggerAdvisor;
+import com.example.aiagent.memory.FileBasedChatMemory;
+import com.example.aiagent.rag.HybridVectorStoreAdapter;
 import com.example.aiagent.rag.QueryRewriter;
-import com.example.aiagent.rag.RagService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
-import java.util.Map;
+
 
 @Component
 @Slf4j
@@ -130,13 +129,13 @@ public class LoveApp {
     private Advisor loveAppRagCloudAdvisor;
 
     @Resource
-    private VectorStore pgVectorVectorStore;
+    private HybridVectorStoreAdapter hybridVectorStoreAdapter;
 
     @Resource
     private QueryRewriter queryRewriter;
-    @Resource
-    private RagService ragService;
 
+    @Resource
+    private FileBasedChatMemory chatMemory;
     /**
      * 和 RAG 知识库进行对话
      *
@@ -147,29 +146,61 @@ public class LoveApp {
     public String doChatWithRag(String message, String chatId) {
 
         // =========================
-        // 1️⃣ 查询改写
+        // 1️⃣ 历史记忆（保留）
+        // =========================
+        List<Message> historyMessages = chatMemory.get(chatId);
+
+        String historyText = historyMessages.stream()
+                .map(Message::getText)
+                .reduce("", (a, b) -> a + "\n" + b);
+
+        // =========================
+        // 2️⃣ query rewrite（保留你的能力）
         // =========================
         String rewrittenMessage = queryRewriter.doQueryRewrite(message);
 
         // =========================
-        // 2️⃣ RAG（变成一行）
+        // 3️⃣ 直接 RAG（核心变化）
         // =========================
-        String finalPrompt = ragService.buildContextPrompt(rewrittenMessage);
-
-        // =========================
-        // 3️⃣ LLM 调用
-        // =========================
-        ChatResponse chatResponse = chatClient
+        ChatResponse response = chatClient
                 .prompt()
-                .user(finalPrompt)
+                .system("""
+你是一个严谨的AI助手，请结合历史对话和知识库回答问题。
+如果知识库不足，请直接说不知道。
+""")
+                .user("""
+【历史对话】
+%s
+
+【问题】
+%s
+""".formatted(historyText, rewrittenMessage))
+                .advisors(spec -> spec
+                        .param("chat_memory", chatId)
+                )
+                // ⭐⭐⭐ 核心：标准RAG
                 .advisors(
-                        new MyLoggerAdvisor()
+                        new org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor(
+                                hybridVectorStoreAdapter
+                        )
                 )
                 .call()
                 .chatResponse();
 
-        return chatResponse.getResult().getOutput().getText();
+        String answer = response.getResult().getOutput().getText();
+
+        // =========================
+        // 4️⃣ 写入记忆
+        // =========================
+        chatMemory.add(chatId, List.of(
+                new org.springframework.ai.chat.messages.UserMessage(message),
+                new org.springframework.ai.chat.messages.AssistantMessage(answer)
+        ));
+
+        return answer;
     }
+
+
     @Resource
     private ToolCallback[] allTools;
 

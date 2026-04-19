@@ -8,11 +8,11 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 
 
-/**
- *
- */
-import java.util.List;
 
+import java.util.List;
+/**
+ * 本地知识库
+ */
 //@Configuration
 public class LoveAppVectorStoreConfig {
 

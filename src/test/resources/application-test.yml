@@ -1,9 +1,7 @@
 spring:
   application:
     name: yu-ai-agent-test
-  profiles:
-    active: test
-  
+  # profiles.active 不允许出现在 profile 专属配置文件中
   datasource:
     url: jdbc:postgresql://localhost:5432/pgvector_test
     username: postgres
@@ -40,3 +38,7 @@ logging:
     com.example.aiagent: INFO
     org.springframework: WARN
     org.springframework.ai: INFO
+
+# ToolRegistration 依赖的 mock 配置
+search-api:
+  api-key: test-key-for-unittest

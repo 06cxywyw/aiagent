@@ -8,7 +8,9 @@ import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
-
+/**
+ * 已舍弃的向量召回策略
+ */
 @Slf4j
 public class LoveAppRagCustomAdvisorFactory {
     public static Advisor createLoveAppRagCustomAdvisor(VectorStore vectorStore, String status) {

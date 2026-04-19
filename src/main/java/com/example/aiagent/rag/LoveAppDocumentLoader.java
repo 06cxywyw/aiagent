@@ -14,6 +14,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 文档加载器
+ */
+
 @Component
 @Slf4j
 public class LoveAppDocumentLoader {

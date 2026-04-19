@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 语意切分器
+ * 语意切分器(根据md文档结构)
  */
 @Component
 public class SemanticSplitter {
