@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 多路召回器
@@ -22,15 +23,24 @@ public class HybridRetriever {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    @Resource
+    private Reranker reranker;
+
     /**
      * 多路召回入口
      */
     public List<Document> retrieve(String query) {
 
-        List<Document> vectorDocs = vectorSearch(query);
         List<Document> keywordDocs = keywordSearch(query);
+        List<Document> vectorDocs = vectorSearch(query);
 
-        return fusion(vectorDocs, keywordDocs);
+        List<Document> fused = fusion(keywordDocs, vectorDocs);
+
+        // 重排序
+        List<Document> reranked = rerank(query, fused);
+
+        // 取 top 3
+        return reranked.stream().limit(3).collect(Collectors.toList());
     }
 
     /**
@@ -77,17 +87,17 @@ public class HybridRetriever {
     /**
      * ③ 融合 + 去重 + 简单排序
      */
-    private List<Document> fusion(List<Document> vectorDocs,
-                                  List<Document> keywordDocs) {
+    private List<Document> fusion(List<Document> keywordDocs,
+                                  List<Document> vectorDocs) {
 
         List<Document> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        // vector 优先
-        addDocs(result, seen, vectorDocs);
-
-        // keyword 补充
+        // keyword 优先
         addDocs(result, seen, keywordDocs);
+
+        // vector 补充
+        addDocs(result, seen, vectorDocs);
 
         return result;
     }
@@ -118,5 +128,15 @@ public class HybridRetriever {
         }
 
         return String.valueOf(doc.getText().hashCode());
+    }
+
+    /**
+     * ④ 重排序
+     */
+    private List<Document> rerank(String query, List<Document> docs) {
+        if (docs.size() <= 1) {
+            return docs;
+        }
+        return reranker.rerank(query, docs);
     }
 }

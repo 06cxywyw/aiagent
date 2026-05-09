@@ -16,10 +16,12 @@
 在传统后端系统架构基础上，引入大模型能力，实现：
 
 - 🤖 多轮对话（上下文记忆）
-- 🧠 对话记忆持久化
+- 🧠 混合记忆系统（短期+长期+实体）
 - 🔍 语义检索（RAG）
+- 🎯 重排序优化（Reranker）
 - 🧰 工具调用（Tool Calling）
 - 🌐 MCP 协议扩展能力
+- 🛠️ 运维监控系统
 - 🧩 CoT 推理优化
 
 实现从 **传统业务系统 → AI智能体系统** 的升级。
@@ -35,8 +37,25 @@ Client（前端 / 调用方）
    Spring Boot（AI Agent）
         │
         ├── Spring AI（大模型调用）
-        ├── Redis（缓存 / 对话记忆）
-        ├── PostgreSQL + PGvector（向量数据库）
+        │   ├── ChatModel（对话模型）
+        │   ├── EmbeddingModel（向量模型）
+        │   └── RerankModel（重排序模型）
+        │
+        ├── 混合记忆系统
+        │   ├── RedisChatMemory（短期记忆）
+        │   ├── LongTermMemory（长期记忆）
+        │   └── EntityMemory（实体记忆）
+        │
+        ├── RAG 检索系统
+        │   ├── HybridRetriever（多路召回）
+        │   ├── Reranker（重排序）
+        │   └── PGvector（向量存储）
+        │
+        ├── 运维监控系统
+        │   ├── HealthChecker（健康检查）
+        │   ├── RagMonitor（RAG监控）
+        │   └── ErrorLogAnalyzer（错误分析）
+        │
         └── MCP Server（工具扩展）
 </pre>
 
@@ -47,19 +66,29 @@ Client（前端 / 调用方）
 ### 1. AI Agent 架构设计
 基于 Spring AI 构建统一 AI 调用入口，支持多轮对话与上下文管理，实现可扩展智能体能力体系。
 
-### 2. RAG（检索增强生成）
-自定义 VectorStore，结合 EmbeddingModel 进行语义向量化，基于 PGvector 实现相似度检索，支持 TopK 检索与多条件过滤。
+### 2. 混合记忆系统（混合内存）
+整合短期记忆（Redis）、长期记忆（向量检索）和实体记忆（Redis Hash），实现多层次对话记忆管理：
+- **短期记忆**：基于 Redis List，自动维护最近 10 条对话
+- **长期记忆**：基于向量语义检索，存储重要对话内容
+- **实体记忆**：自动提取人名、地点、偏好等关键信息
 
-### 3. Tool Calling 工具调用体系
+### 3. RAG（检索增强生成）增强版
+自定义 VectorStore，结合 EmbeddingModel 进行语义向量化，基于 PGvector 实现相似度检索。引入**多路召回 + 关键词匹配 + 重排序**策略，显著提升检索相关性。
+
+### 4. Tool Calling 工具调用体系
 基于注解实现工具注册与调用，支持 AI 自动选择工具执行，集成文件操作、网络搜索、网页抓取、命令执行及 PDF 生成等能力。
 
-### 4. MCP 协议扩展能力
+### 5. MCP 协议扩展能力
 基于 MCP Server 封装外部服务，集成 Pexels 图片搜索 API，实现 AI 联网图片检索能力，并支持 Stdio 与 SSE 双通信模式。
 
-### 5. 对话记忆系统
-基于 Kryo 实现文件持久化，并支持 Redis 扩展，实现上下文恢复与过期控制。
+### 6. 运维监控系统
+提供完整的运维监控能力：
+- **健康检查**：数据库、Redis、向量库状态监控
+- **RAG监控**：定时检查向量搜索与 Embedding 模型
+- **错误分析**：错误聚合、聚类与统计分析
+- **错误知识库**：语义检索历史错误解决方案
 
-### 6. CoT 推理优化
+### 7. CoT 推理优化
 引入 Chain of Thought 推理机制，提升复杂问题处理能力与结果可解释性。
 
 ---

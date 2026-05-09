@@ -2,7 +2,7 @@ package com.example.aiagent.app;
 
 
 import com.example.aiagent.advisor.MyLoggerAdvisor;
-import com.example.aiagent.memory.FileBasedChatMemory;
+import com.example.aiagent.memory.MixedMemory;
 import com.example.aiagent.rag.HybridVectorStoreAdapter;
 import com.example.aiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Component
@@ -135,7 +136,8 @@ public class LoveApp {
     private QueryRewriter queryRewriter;
 
     @Resource
-    private FileBasedChatMemory chatMemory;
+    private MixedMemory mixedMemory;
+
     /**
      * 和 RAG 知识库进行对话
      *
@@ -146,9 +148,9 @@ public class LoveApp {
     public String doChatWithRag(String message, String chatId) {
 
         // =========================
-        // 1️⃣ 历史记忆（保留）
+        // 1️⃣ 历史记忆（短期记忆：最近10条）
         // =========================
-        List<Message> historyMessages = chatMemory.get(chatId);
+        List<Message> historyMessages = mixedMemory.get(chatId);
 
         String historyText = historyMessages.stream()
                 .map(Message::getText)
@@ -160,21 +162,49 @@ public class LoveApp {
         String rewrittenMessage = queryRewriter.doQueryRewrite(message);
 
         // =========================
-        // 3️⃣ 直接 RAG（核心变化）
+        // 3️⃣ 检索长期记忆（语义相关记忆）
+        // =========================
+        List<String> longTermMemories = mixedMemory.retrieveRelevantMemories(chatId, rewrittenMessage, 3);
+        String longTermMemoriesText = longTermMemories.stream()
+                .map(m -> "- " + m)
+                .reduce("", (a, b) -> a + "\n" + b);
+
+        // =========================
+        // 4️⃣ 实体信息
+        // =========================
+        Map<String, String> entityInfo = mixedMemory.getEntityInfo(chatId);
+        String entityInfoText = entityInfo.entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue())
+                .reduce("", (a, b) -> a + "\n" + b);
+
+        // =========================
+        // 5️⃣ 直接 RAG（核心变化）
         // =========================
         ChatResponse response = chatClient
                 .prompt()
                 .system("""
-你是一个严谨的AI助手，请结合历史对话和知识库回答问题。
+你是一个严谨的AI助手，请结合历史对话、长期记忆、实体信息和知识库回答问题。
 如果知识库不足，请直接说不知道。
 """)
                 .user("""
 【历史对话】
-%s
+{historyText}
+
+【长期记忆】
+{longTermMemoriesText}
+
+【实体信息】
+{entityInfoText}
 
 【问题】
-%s
-""".formatted(historyText, rewrittenMessage))
+{rewrittenMessage}
+""".formatted(
+                        Map.of(
+                                "historyText", historyText,
+                                "longTermMemoriesText", longTermMemoriesText,
+                                "entityInfoText", entityInfoText,
+                                "rewrittenMessage", rewrittenMessage
+                        ))
                 .advisors(spec -> spec
                         .param("chat_memory", chatId)
                 )
@@ -190,9 +220,9 @@ public class LoveApp {
         String answer = response.getResult().getOutput().getText();
 
         // =========================
-        // 4️⃣ 写入记忆
+        // 6️⃣ 写入记忆（短期 + 长期 + 实体）
         // =========================
-        chatMemory.add(chatId, List.of(
+        mixedMemory.add(chatId, List.of(
                 new org.springframework.ai.chat.messages.UserMessage(message),
                 new org.springframework.ai.chat.messages.AssistantMessage(answer)
         ));

@@ -31,6 +31,8 @@ public class Manus extends ToolCallAgent {
                 • 是 → 立即调用最合适的工具，然后立即结束
                 • 否 → 给出简洁的直接回答，然后立即结束
                 一句话足够，不要冗长解释。
+                
+                
                 """;
         this.setNextStepPrompt(NEXT_STEP_PROMPT);
         this.setMaxSteps(20);

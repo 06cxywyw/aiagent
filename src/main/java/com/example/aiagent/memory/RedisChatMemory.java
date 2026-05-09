@@ -1,6 +1,5 @@
 package com.example.aiagent.memory;
 
-
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -13,7 +12,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 基于 Redis 的对话记忆（增强版）
+ * 短期记忆：最近 10 条对话
+ * 基于 Redis List 实现
  */
 @Component
 public class RedisChatMemory implements ChatMemory {
@@ -23,25 +23,22 @@ public class RedisChatMemory implements ChatMemory {
     /**
      * key 前缀
      */
-    private static final String KEY_PREFIX = "chat:memory:";
+    private static final String KEY_PREFIX = "chat:memory:short:";
 
     /**
-     * 最大上下文条数（防止 token 爆炸）
+     * 最大上下文条数（短期记忆：10条）
      */
-    private static final int MAX_CONTEXT_SIZE = 20;
+    private static final int MAX_CONTEXT_SIZE = 10;
 
     /**
-     * 过期时间（秒）
+     * 过期时间（秒）- 3天
      */
-    private static final long EXPIRE_SECONDS = 24 * 60 * 60;
+    private static final long EXPIRE_SECONDS = 3 * 24 * 60 * 60;
 
     public RedisChatMemory(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
-    /**
-     * 添加消息
-     */
     @Override
     public void add(String conversationId, List<Message> messages) {
         if (StrUtil.isBlank(conversationId) || messages == null || messages.isEmpty()) {
@@ -51,29 +48,25 @@ public class RedisChatMemory implements ChatMemory {
         String key = buildKey(conversationId);
 
         try {
-            // 1. 逐条存入 Redis List
+            // 逐条存入 Redis List
             for (Message message : messages) {
                 redisTemplate.opsForList().rightPush(key, JSONUtil.toJsonStr(message));
             }
 
-            // 2. 裁剪上下文（只保留最近 MAX_CONTEXT_SIZE 条）
+            // 裁剪上下文（只保留最近 MAX_CONTEXT_SIZE 条）
             Long size = redisTemplate.opsForList().size(key);
             if (size != null && size > MAX_CONTEXT_SIZE) {
                 redisTemplate.opsForList().trim(key, size - MAX_CONTEXT_SIZE, -1);
             }
 
-            // 3. 设置过期时间
+            // 设置过期时间
             redisTemplate.expire(key, EXPIRE_SECONDS, TimeUnit.SECONDS);
 
         } catch (Exception e) {
-            // 不要影响主流程
             e.printStackTrace();
         }
     }
 
-    /**
-     * 获取消息
-     */
     @Override
     public List<Message> get(String conversationId) {
         if (StrUtil.isBlank(conversationId)) {
@@ -105,9 +98,6 @@ public class RedisChatMemory implements ChatMemory {
         }
     }
 
-    /**
-     * 清空会话
-     */
     @Override
     public void clear(String conversationId) {
         if (StrUtil.isBlank(conversationId)) {
@@ -121,9 +111,6 @@ public class RedisChatMemory implements ChatMemory {
         }
     }
 
-    /**
-     * 构建 key
-     */
     private String buildKey(String conversationId) {
         return KEY_PREFIX + conversationId;
     }
