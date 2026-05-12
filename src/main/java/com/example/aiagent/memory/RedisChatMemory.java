@@ -2,6 +2,7 @@ package com.example.aiagent.memory;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  * 短期记忆：最近 10 条对话
  * 基于 Redis List 实现
  */
+@Slf4j
 @Component
 public class RedisChatMemory implements ChatMemory {
 
@@ -63,7 +65,7 @@ public class RedisChatMemory implements ChatMemory {
             redisTemplate.expire(key, EXPIRE_SECONDS, TimeUnit.SECONDS);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Redis 添加消息失败: conversationId={}", conversationId, e);
         }
     }
 
@@ -93,7 +95,7 @@ public class RedisChatMemory implements ChatMemory {
             return result;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Redis 获取消息失败: conversationId={}", conversationId, e);
             return new ArrayList<>();
         }
     }
@@ -107,7 +109,7 @@ public class RedisChatMemory implements ChatMemory {
         try {
             redisTemplate.delete(buildKey(conversationId));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Redis 清空消息失败: conversationId={}", conversationId, e);
         }
     }
 

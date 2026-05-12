@@ -170,10 +170,22 @@ public class ErrorSummarizer {
      * 生成错误代码
      */
     private String generateErrorCode(ErrorSummary summary) {
-        String timestamp = Instant.now().toString().substring(0, 10); // YYYY-MM-DD
-        String categoryCode = getCategoryCode(summary.getCategory());
-        String hash = String.valueOf(summary.getErrorMessage().hashCode()).substring(0, 4);
-        return String.format("ERR-%s-%s-%s", timestamp, categoryCode, Math.abs(hash));
+
+        String timestamp =
+                Instant.now().toString().substring(0, 10);
+
+        String categoryCode =
+                getCategoryCode(summary.getCategory());
+
+        int hash =
+                Math.abs(summary.getErrorMessage().hashCode());
+
+        return String.format(
+                "ERR-%s-%s-%d",
+                timestamp,
+                categoryCode,
+                hash
+        );
     }
 
     /**

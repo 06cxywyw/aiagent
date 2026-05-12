@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -35,7 +36,11 @@ public class RagMonitor {
     private final AtomicInteger errorCount = new AtomicInteger(0);
     private final AtomicInteger successCount = new AtomicInteger(0);
 
-    public RagMonitor(VectorStore vectorStore, EmbeddingModel embeddingModel) {
+    public RagMonitor(
+            @Qualifier("pgVectorVectorStore")
+            VectorStore vectorStore,
+            EmbeddingModel embeddingModel
+    ) {
         this.vectorStore = vectorStore;
         this.embeddingModel = embeddingModel;
     }
@@ -114,7 +119,7 @@ public class RagMonitor {
     private void checkEmbeddingModel() {
         try {
             var embedding = embeddingModel.embed("健康检查测试");
-            log.debug("Embedding 模型测试: 向量维度 {}", embedding.size());
+            log.debug("Embedding 模型测试: 向量维度 {}", embedding.length);
         } catch (Exception e) {
             log.error("Embedding 模型测试失败", e);
             throw e;

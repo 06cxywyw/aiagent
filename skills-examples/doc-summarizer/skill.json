@@ -1,0 +1,39 @@
+{
+  "id": "doc-summarizer",
+  "name": "文档总结器",
+  "version": "2.1.0",
+  "description": "快速总结长文档，提取关键信息",
+  "author": "Doc Team",
+  "type": "PROMPT",
+  "tags": ["文本处理", "总结", "NLP"],
+  "inputs": [
+    {
+      "name": "document",
+      "type": "string",
+      "description": "要总结的文档内容",
+      "required": true
+    },
+    {
+      "name": "length",
+      "type": "string",
+      "description": "总结长度（short/medium/long）",
+      "required": false,
+      "defaultValue": "medium"
+    },
+    {
+      "name": "focus",
+      "type": "string",
+      "description": "关注重点（可选）",
+      "required": false
+    }
+  ],
+  "output": {
+    "type": "string",
+    "description": "文档摘要"
+  },
+  "promptTemplate": "请总结以下文档，生成 {length} 长度的摘要。{focus}\n\n文档内容：\n{document}\n\n要求：\n1. 提取核心观点\n2. 保留关键数据\n3. 结构清晰\n4. 语言简洁",
+  "metadata": {
+    "category": "text",
+    "license": "MIT"
+  }
+}

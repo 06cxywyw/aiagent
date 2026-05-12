@@ -1,18 +1,16 @@
 package com.example.aiagent.memory;
 
-import com.alibaba.cloud.ai.dashscope.embedding.DashScopeEmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Embedding 模型配置
+ * Embedding 配置
+ *
+ * Spring AI Alibaba Starter
+ * 会自动创建 EmbeddingModel Bean
+ *
+ * 无需手动 new DashScopeEmbeddingModel()
  */
 @Configuration
 public class EmbeddingConfig {
 
-    @Bean
-    public EmbeddingModel dashscopeEmbeddingModel() {
-        return new DashScopeEmbeddingModel();
-    }
 }

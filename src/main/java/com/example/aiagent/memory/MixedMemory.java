@@ -11,6 +11,11 @@ import java.util.stream.Collectors;
 /**
  * 混合记忆管理器
  * 整合短期记忆、长期记忆和实体记忆
+ *
+ * 架构改进：
+ * 1. 实现完整的 ChatMemory 接口
+ * 2. 统一的 add/get/clear 操作
+ * 3. 长期记忆和实体记忆随短期记忆同步更新
  */
 @Slf4j
 public class MixedMemory implements ChatMemory {
@@ -28,17 +33,22 @@ public class MixedMemory implements ChatMemory {
     @Override
     public void add(String conversationId, List<Message> messages) {
         if (messages == null || messages.isEmpty()) {
+            log.debug("混合记忆添加：消息列表为空，跳过");
             return;
         }
+
+        log.debug("混合记忆添加：conversationId={}, 消息数={}", conversationId, messages.size());
 
         // 1. 添加到短期记忆
         shortTermMemory.add(conversationId, messages);
 
-        // 2. 提取并存储实体
+        // 2. 提取并存储实体（从所有消息中提取）
         entityMemory.extractAndStore(conversationId, messages);
 
-        // 3. 提取重要信息添加到长期记忆
+        // 3. 提取重要信息添加到长期记忆（仅用户消息）
         extractAndStoreToLongTerm(conversationId, messages);
+
+        log.debug("混合记忆添加完成：conversationId={}", conversationId);
     }
 
     @Override
@@ -49,9 +59,18 @@ public class MixedMemory implements ChatMemory {
 
     @Override
     public void clear(String conversationId) {
+        log.info("混合记忆清空：conversationId={}", conversationId);
+
+        // 清空短期记忆
         shortTermMemory.clear(conversationId);
-        // TODO: 清空长期记忆和实体记忆
-        log.warn("clear 未实现长期记忆和实体记忆的清空");
+
+        // 清空长期记忆
+        longTermMemory.clearMemory(conversationId);
+
+        // 清空实体记忆
+        entityMemory.clearEntities(conversationId);
+
+        log.info("混合记忆清空完成：conversationId={}", conversationId);
     }
 
     /**
@@ -80,8 +99,15 @@ public class MixedMemory implements ChatMemory {
                 .filter(content -> content != null && content.length() >= 50)
                 .collect(Collectors.toList());
 
+        if (importantContents.isEmpty()) {
+            log.debug("长期记忆提取：无满足长度要求的内容");
+            return;
+        }
+
         for (String content : importantContents) {
             longTermMemory.addMemory(userId, content);
         }
+
+        log.debug("长期记忆提取：存储了 {} 条重要信息", importantContents.size());
     }
 }

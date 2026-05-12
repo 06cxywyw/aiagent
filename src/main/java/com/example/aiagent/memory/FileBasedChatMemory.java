@@ -1,9 +1,9 @@
 package com.example.aiagent.memory;
 
-import com.alibaba.cloud.ai.dashscope.api.DashScopeAudioTranscriptionApi;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import lombok.extern.slf4j.Slf4j;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -18,6 +18,7 @@ import java.util.List;
 /**
  * 基于文件持久化的对话记忆
  */
+@Slf4j
 public class FileBasedChatMemory implements ChatMemory {
 
     private final String BASE_DIR;
@@ -50,8 +51,6 @@ public class FileBasedChatMemory implements ChatMemory {
         return getOrCreateConversation(conversationId);
     }
 
-
-
     @Override
     public void clear(String conversationId) {
         File file = getConversationFile(conversationId);
@@ -67,7 +66,7 @@ public class FileBasedChatMemory implements ChatMemory {
             try (Input input = new Input(new FileInputStream(file))) {
                 messages = kryo.readObject(input, ArrayList.class);
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("读取对话记忆失败: conversationId={}", conversationId, e);
             }
         }
         return messages;
@@ -78,7 +77,7 @@ public class FileBasedChatMemory implements ChatMemory {
         try (Output output = new Output(new FileOutputStream(file))) {
             kryo.writeObject(output, messages);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("保存对话记忆失败: conversationId={}", conversationId, e);
         }
     }
 

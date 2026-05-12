@@ -188,23 +188,22 @@ public class LoveApp {
 """)
                 .user("""
 【历史对话】
-{historyText}
+%s
 
 【长期记忆】
-{longTermMemoriesText}
+%s
 
 【实体信息】
-{entityInfoText}
+%s
 
 【问题】
-{rewrittenMessage}
+%s
 """.formatted(
-                        Map.of(
-                                "historyText", historyText,
-                                "longTermMemoriesText", longTermMemoriesText,
-                                "entityInfoText", entityInfoText,
-                                "rewrittenMessage", rewrittenMessage
-                        ))
+                        historyText,
+                        longTermMemoriesText,
+                        entityInfoText,
+                        rewrittenMessage
+                ))
                 .advisors(spec -> spec
                         .param("chat_memory", chatId)
                 )

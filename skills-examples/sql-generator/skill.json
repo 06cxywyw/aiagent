@@ -1,0 +1,39 @@
+{
+  "id": "sql-generator",
+  "name": "SQL 查询生成器",
+  "version": "1.5.2",
+  "description": "根据自然语言描述生成 SQL 查询",
+  "author": "Data Team",
+  "type": "PROMPT",
+  "tags": ["数据分析", "代码生成", "SQL"],
+  "inputs": [
+    {
+      "name": "description",
+      "type": "string",
+      "description": "查询需求的自然语言描述",
+      "required": true
+    },
+    {
+      "name": "schema",
+      "type": "string",
+      "description": "数据库表结构（可选）",
+      "required": false
+    },
+    {
+      "name": "dialect",
+      "type": "string",
+      "description": "SQL 方言（MySQL/PostgreSQL/Oracle）",
+      "required": false,
+      "defaultValue": "MySQL"
+    }
+  ],
+  "output": {
+    "type": "string",
+    "description": "生成的 SQL 查询语句"
+  },
+  "promptTemplate": "你是一个 SQL 专家。根据以下需求生成 {dialect} SQL 查询：\n\n需求：{description}\n\n{schema}\n\n请生成优化的 SQL 查询，并解释查询逻辑。",
+  "metadata": {
+    "category": "data",
+    "license": "Apache-2.0"
+  }
+}

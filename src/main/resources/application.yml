@@ -2,7 +2,8 @@ spring:
   application:
     name: yu-ai-agent
   profiles:
-    active: dev   # ? ?? dev ??
+    active: dev   # 激活 dev 配置
+    include: memory  # 引入 memory 配置
 
 
 server:

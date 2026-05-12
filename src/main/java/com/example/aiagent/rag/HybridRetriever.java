@@ -4,6 +4,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 public class HybridRetriever {
 
     @Resource
+    @Qualifier("pgVectorVectorStore")
     private VectorStore vectorStore;
 
     @Resource
@@ -26,12 +28,15 @@ public class HybridRetriever {
     @Resource
     private Reranker reranker;
 
+    @Resource
+    private FullTextSearchRetriever fullTextSearchRetriever;
+
     /**
      * 多路召回入口
      */
     public List<Document> retrieve(String query) {
 
-        List<Document> keywordDocs = keywordSearch(query);
+        List<Document> keywordDocs = fullTextKeywordSearch(query);
         List<Document> vectorDocs = vectorSearch(query);
 
         List<Document> fused = fusion(keywordDocs, vectorDocs);
@@ -59,10 +64,32 @@ public class HybridRetriever {
     }
 
     /**
-     * ② 关键词召回（SQL + metadata）
+     * ② 全文搜索召回（新版）
+     */
+    private List<Document> fullTextKeywordSearch(String query) {
+        try {
+            // 优先使用全文搜索
+            List<Document> docs = fullTextSearchRetriever.fullTextSearch(query, 5);
+            if (!docs.isEmpty()) {
+                log.info("fulltext docs = {}", docs.size());
+                return docs;
+            }
+
+            // 降级到简单关键词搜索
+            docs = fullTextSearchRetriever.simpleKeywordSearch(query, 5);
+            log.info("simple keyword docs = {}", docs.size());
+            return docs;
+
+        } catch (Exception e) {
+            log.warn("全文搜索失败，降级到旧版", e);
+            return keywordSearch(query);
+        }
+    }
+
+    /**
+     * ② 关键词召回（旧版，作为降级方案）
      */
     private List<Document> keywordSearch(String query) {
-
         try {
             return jdbcTemplate.query(
                     """

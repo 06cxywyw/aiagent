@@ -1,0 +1,32 @@
+# 安全配置
+security:
+  # 限流配置
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    default-requests-per-minute: ${RATE_LIMIT_DEFAULT:60}
+    authenticated-requests-per-minute: ${RATE_LIMIT_AUTHENTICATED:120}
+    window-size-seconds: ${RATE_LIMIT_WINDOW:60}
+
+  # API Key 配置（环境变量优先）
+  api-keys:
+    dashscope-key: ${DASHSCOPE_API_KEY}
+    search-api-key: ${SEARCH_API_KEY}
+
+  # 数据库配置（环境变量优先）
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # Redis 配置（环境变量优先）
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
+    database: ${REDIS_DATABASE}
+
+# 服务配置
+server:
+  error:
+    include-message: when-authenticated
+    include-binding-errors: when-authenticated

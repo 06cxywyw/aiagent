@@ -52,12 +52,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- 阿里云百练、灵积大模型服务 -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>dashscope-sdk-java</artifactId>
-            <version>2.19.1</version>
-        </dependency>
+
+
         <!-- Spring AI Alibaba -->
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>

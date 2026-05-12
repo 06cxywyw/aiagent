@@ -1,0 +1,44 @@
+# 记忆系统配置
+memory:
+  # 长期记忆配置
+  long-term:
+    min-content-length: 50        # 最小内容长度（字符）
+    similarity-threshold: 0.5     # 相似度阈值（0-1）
+    max-memory-count: 5           # 单次检索最大返回数量
+
+  # 记忆清理配置
+  cleanup:
+    enabled: true                 # 是否启用自动清理
+    dry-run: false                # 试运行模式（只记录不删除）
+    cron: "0 0 2 * * ?"          # 执行时间（每天凌晨2点）
+
+    # 清理规则
+    rules:
+      # 规则1：低重要性记忆，30天未访问
+      - importance-threshold: 0.3
+        days-inactive: 30
+        description: "低重要性30天未访问"
+
+      # 规则2：中重要性记忆，90天未访问
+      - importance-threshold: 0.5
+        days-inactive: 90
+        description: "中重要性90天未访问"
+
+      # 规则3：高重要性记忆，180天未访问
+      - importance-threshold: 0.7
+        days-inactive: 180
+        description: "高重要性180天未访问"
+
+      # 规则4：所有记忆，1年未访问
+      - importance-threshold: 1.0
+        days-inactive: 365
+        description: "所有记忆1年未访问"
+
+  # 短期记忆配置
+  short-term:
+    max-messages: 10              # 最大消息数量
+    expire-days: 3                # 过期时间（天）
+
+  # 实体记忆配置
+  entity:
+    expire-days: 30               # 过期时间（天）
